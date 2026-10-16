@@ -41,6 +41,7 @@ export function ProjectDetails({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [importText, setImportText] = useState("");
+  const [entryMode, setEntryMode] = useState<"single" | "bulk">("single");
   const [importPending, setImportPending] = useState(false);
   const [importMessage, setImportMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -324,6 +325,12 @@ export function ProjectDetails({
 
             {error && <p role="alert" className="mt-4 text-sm text-red-400">{error}</p>}
 
+            <div className="mt-5 inline-flex rounded-xl border border-zinc-800 bg-zinc-950 p-1" role="group" aria-label="Variable entry mode">
+              <button className={entryMode === "single" ? "rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 shadow-sm" : "rounded-lg px-4 py-2 text-sm text-zinc-500 transition hover:text-zinc-200"} onClick={() => setEntryMode("single")} type="button" aria-pressed={entryMode === "single"}>Single variable</button>
+              <button className={entryMode === "bulk" ? "rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 shadow-sm" : "rounded-lg px-4 py-2 text-sm text-zinc-500 transition hover:text-zinc-200"} onClick={() => setEntryMode("bulk")} type="button" aria-pressed={entryMode === "bulk"}>Bulk upload</button>
+            </div>
+
+            {entryMode === "bulk" && (
             <section className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -341,6 +348,9 @@ export function ProjectDetails({
               {importMessage && <p aria-live="polite" className="mt-3 break-words text-sm text-zinc-300">{importMessage}</p>}
             </section>
 
+            )}
+
+            {entryMode === "single" && (
             <form onSubmit={addVariable} className="mt-5 grid gap-4 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5 md:grid-cols-[minmax(9rem,0.7fr)_minmax(12rem,1.3fr)_auto]">
               <label className="text-xs text-zinc-400">
                 Key
@@ -369,6 +379,9 @@ export function ProjectDetails({
                 Add variable
               </button>
             </form>
+            )}
+
+
 
             {variables.length === 0 ? (
               <div className="mt-5 rounded-lg border border-dashed border-zinc-800 px-6 py-12 text-center">
