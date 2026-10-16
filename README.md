@@ -4,7 +4,7 @@ EnvVault is a self-hosted environment-variable manager for keeping each project'
 
 ## Features
 
-- **Projects** — create and manage separate collections of environment variables.
+- **Projects** — create and manage separate collections of environment variables, with editable names and descriptions.\n- **Website links and favicons** — attach a live app URL to each project, open it directly from the project details, and display its website favicon as the project icon.
 - **Bulk .env import** — upload a complete .env, .env.local, or compatible text file, or paste the file contents.
 - **Import preview** — see how many valid variables are detected before importing.
 - **Duplicate protection** — existing keys are preserved; duplicates and invalid entries are skipped and reported.
