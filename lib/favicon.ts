@@ -18,7 +18,7 @@ function isPrivateAddress(address: string): boolean {
     value.startsWith("::ffff:");
 }
 
-async function isPublicHost(hostname: string): Promise<boolean> {
+export async function isPublicHostname(hostname: string): Promise<boolean> {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
   if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") ||
       host.endsWith(".internal") || host.endsWith(".test")) return false;
@@ -65,7 +65,7 @@ export async function discoverFavicon(input: string): Promise<string> {
   if (!["http:", "https:"].includes(current.protocol) || current.username || current.password) return "";
 
   for (let redirects = 0; redirects <= 3; redirects++) {
-    if (!(await isPublicHost(current.hostname))) return "";
+    if (!(await isPublicHostname(current.hostname))) return "";
     let response: Response;
     try {
       response = await fetch(current, {
@@ -96,7 +96,7 @@ export async function discoverFavicon(input: string): Promise<string> {
       const icon = findIcon(html, current);
       if (icon) {
         const iconUrl = new URL(icon);
-        if (await isPublicHost(iconUrl.hostname)) return iconUrl.toString();
+        if (await isPublicHostname(iconUrl.hostname)) return iconUrl.toString();
       }
     } catch { /* Use the site's conventional favicon path. */ }
     return new URL("/favicon.ico", current).toString();
