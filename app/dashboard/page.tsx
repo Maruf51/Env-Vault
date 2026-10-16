@@ -37,10 +37,12 @@ async function DashboardContent() {
 
   return (
     <ProjectDashboard
-      initialProjects={projects.map(({ _id, name, description, updatedAt }) => ({
+      initialProjects={projects.map(({ _id, name, description, websiteUrl, logoUrl, updatedAt }) => ({
         id: _id.toHexString(),
         name,
         description,
+        websiteUrl: websiteUrl ?? "",
+        logoUrl: logoUrl ?? "",
         updatedAt: updatedAt.toISOString(),
         variableCount: variableCounts.get(_id.toHexString()) ?? 0,
       }))}
