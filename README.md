@@ -1,81 +1,146 @@
-# Env Vault
+# EnvVault
 
-Env Vault is a self-hosted environment-variable manager built with the Next.js
-App Router, Auth.js (NextAuth v5), and MongoDB. Values are encrypted at rest
-with AES-256-GCM; the encryption key is kept only in your local environment,
-never in MongoDB.
+EnvVault is a self-hosted environment-variable manager for keeping each project's configuration in one place. It provides authenticated project lists, encrypted secret storage, individual variable management, bulk .env import, and downloadable environment files.
+
+## Features
+
+- **Projects** — create and manage separate collections of environment variables.
+- **Bulk .env import** — upload a complete .env, .env.local, or compatible text file, or paste the file contents.
+- **Import preview** — see how many valid variables are detected before importing.
+- **Duplicate protection** — existing keys are preserved; duplicates and invalid entries are skipped and reported.
+- **Variable management** — add, edit, and delete individual variables.
+- **Export** — download a project's variables as a sorted .env.local file.
+- **Authentication** — account registration and login using Auth.js Credentials.
+- **Encryption at rest** — values are encrypted using AES-256-GCM before being stored in MongoDB.
+- **Project ownership checks** — API endpoints verify that the signed-in user owns the project.
+
+## Tech stack
+
+- Next.js 16 App Router and React 19
+- TypeScript
+- Auth.js / NextAuth v5
+- MongoDB and the MongoDB Node.js driver
+- Tailwind CSS v4
+- Node.js crypto (AES-256-GCM)
+- bcryptjs for password hashing
 
 ## Requirements
 
-- Node.js 20 or newer
-- A MongoDB Atlas cluster (or another MongoDB deployment)
+- Node.js 20+
 - npm
+- A MongoDB Atlas cluster or another reachable MongoDB deployment
 
-Install dependencies and start the development server:
+## Getting started
 
-```bash
-npm install
-npm run dev
-```
+1. Clone the repository and enter the project directory:
 
-Open [http://localhost:3000](http://localhost:3000).
+   ~~~bash
+   git clone https://github.com/Maruf51/Env-Vault.git
+   cd Env-Vault
+   ~~~
 
-## Environment setup
+2. Install dependencies:
 
-Create or update `.env.local` at the project root:
+   ~~~bash
+   npm install
+   ~~~
 
-```dotenv
-MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority
-MONGODB_DB=env-vault
-NEXTAUTH_SECRET=<generated-secret>
-NEXTAUTH_URL=http://localhost:3000
-ENCRYPTION_KEY=<generated-key>
-```
+3. Create .env.local in the project root:
 
-Generate the two secrets with OpenSSL:
+   ~~~dotenv
+   MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority
+   MONGODB_DB=env-vault
+   NEXTAUTH_SECRET=<generated-secret>
+   NEXTAUTH_URL=http://localhost:3000
+   ENCRYPTION_KEY=<64-character-hex-key>
+   ~~~
 
-```bash
-openssl rand -hex 32
-openssl rand -base64 32
-```
+4. Generate strong secrets:
 
-Use the first output for `ENCRYPTION_KEY` (exactly 64 hexadecimal characters)
-and the second output for `NEXTAUTH_SECRET`. Do not commit `.env.local` or
-share these values. `.env*` files are ignored by git.
+   ~~~bash
+   # 64 hexadecimal characters for ENCRYPTION_KEY
+   openssl rand -hex 32
 
-**Back up `ENCRYPTION_KEY` somewhere safe, such as a password manager.** Every
-stored value depends on that key and cannot be recovered if it is lost or
-changed.
+   # A secret for NEXTAUTH_SECRET
+   openssl rand -base64 32
+   ~~~
 
-## MongoDB Atlas
+   Copy each generated value into the matching variable. ENCRYPTION_KEY must be exactly 64 hexadecimal characters.
 
-1. Create an account at [MongoDB Atlas](https://www.mongodb.com/atlas) and
-   create a project and a free or paid cluster.
-2. Under **Database Access**, create a database user with a strong password.
-   Give it the minimum database read/write permissions required for your
-   cluster.
-3. Under **Network Access**, allow the IP address of the machine running Env
-   Vault. Avoid `0.0.0.0/0` for a publicly reachable production deployment.
-4. Select **Connect → Drivers**, choose Node.js, and copy the connection string.
-   Replace the username, password, and cluster placeholders. URL-encode any
-   special characters in the username or password.
-5. Set that URI as `MONGODB_URI` in `.env.local` and set `MONGODB_DB` to
-   `env-vault`.
-6. Restart the development server after changing `.env.local`.
+5. Start the development server:
 
-The application creates the `users`, `projects`, and `variables` collections
-as they are first used. It creates unique indexes for account emails and
-variable keys within a project.
+   ~~~bash
+   npm run dev
+   ~~~
 
-## Authentication and data protection
+6. Open [http://localhost:3000](http://localhost:3000), register an account, and create a project.
 
-- Registration hashes passwords with bcryptjs (12 rounds).
-- Auth.js Credentials sessions use signed JWTs.
-- Each variable is encrypted using AES-256-GCM with a fresh random 12-byte IV;
-  the ciphertext, IV, and authentication tag are stored as hex.
-- Project and variable APIs verify that the signed-in user owns the project.
-- Downloaded `.env.local` files are sorted alphabetically by key.
+Other available scripts:
 
-Next.js 16 renamed its `middleware.ts` convention to `proxy.ts`. This project
-uses `proxy.ts` for the requested dashboard and project-API login gate, while
-each API handler independently performs authentication and ownership checks.
+~~~bash
+npm run build
+npm run start
+npm run lint
+~~~
+
+## Importing a complete environment file
+
+1. Open a project.
+2. Under **Import a complete .env file**, choose a local environment file or paste its contents.
+3. Review the detected variable count.
+4. Select **Import variables**.
+5. Review the import summary. Existing keys are not overwritten.
+
+The import endpoint accepts up to 500 variables per request. The file picker rejects files larger than 1 MB. Blank lines, comments, and lines prefixed with **export** are supported. The parser splits each assignment at the first equals sign, so values may contain additional equals signs. Matching surrounding single or double quotes are removed. Invalid names and repeated keys within the same input are skipped.
+
+This is a simple dotenv-style parser, not a complete shell interpreter: shell expansion, command substitution, and multiline quoted values are not evaluated.
+
+## MongoDB setup
+
+1. Create a cluster and database user in [MongoDB Atlas](https://www.mongodb.com/atlas).
+2. Grant the database user only the access it needs.
+3. Configure Network Access for the environment where EnvVault runs. Avoid allowing every IP address for production unless you understand the risk.
+4. Copy the Node.js driver connection string, replace its placeholders, and URL-encode special characters in credentials.
+5. Set the connection string in MONGODB_URI and the database name in MONGODB_DB.
+
+The application creates its collections and required indexes when they are first used.
+
+## Security notes
+
+- Never commit real .env files, database credentials, API keys, or generated secrets.
+- Keep .env.local private. The repository's .gitignore excludes local environment files.
+- Back up ENCRYPTION_KEY in a secure password manager. If the key is lost or changed, previously encrypted values cannot be decrypted.
+- Values are encrypted on the server before being written to MongoDB; the encryption key is read from the server's environment and is not stored in the database.
+- Use HTTPS in production and keep dependencies and the deployment runtime updated.
+- Treat downloaded .env.local files as sensitive and do not upload them to public issue trackers or repositories.
+
+## Project structure
+
+~~~text
+app/
+  api/
+    auth/                  # Auth.js and registration endpoints
+    projects/              # Project and variable APIs
+      [projectId]/
+        download/           # Download project variables
+        variables/
+          import/           # Bulk .env import
+  dashboard/               # Project list and project details routes
+  login/
+  register/
+components/
+  ProjectDashboard.tsx
+  ProjectDetails.tsx
+  LoginForm.tsx
+  RegisterForm.tsx
+lib/
+  auth-helpers.ts
+  encryption.ts
+  mongodb.ts
+auth.ts
+proxy.ts
+~~~
+
+## License
+
+No license file is currently included. Add a license before distributing or reusing the project under explicit open-source terms.
