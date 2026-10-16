@@ -6,6 +6,8 @@ export type ProjectDocument = {
   userId: ObjectId;
   name: string;
   description: string;
+  websiteUrl?: string;
+  logoUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 };
