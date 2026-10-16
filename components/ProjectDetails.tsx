@@ -261,7 +261,7 @@ export function ProjectDetails({
             <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
-                  {project.logoUrl && !project.logoUrl.includes("google.com/s2/favicons") ? <img alt="" className="size-8 object-contain" onError={(event) => { event.currentTarget.style.display = "none"; }} src={project.logoUrl} /> : project.websiteUrl ? <img alt="" className="size-8 object-contain" onError={(event) => { event.currentTarget.style.display = "none"; }} src={project.websiteUrl.split("/").slice(0, 3).join("/") + "/favicon.ico"} /> : <span className="text-lg font-semibold text-zinc-400">{project.name.slice(0, 1).toUpperCase()}</span>}
+                  {project.websiteUrl ? <img alt="" className="size-8 object-contain" onError={(event) => { event.currentTarget.style.display = "none"; }} src={"/api/favicon?url=" + encodeURIComponent(project.websiteUrl)} /> : <span className="text-lg font-semibold text-zinc-400">{project.name.slice(0, 1).toUpperCase()}</span>}
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-3">
@@ -308,27 +308,26 @@ export function ProjectDetails({
               <label className="block text-sm text-zinc-300">Website URL <span className="text-zinc-500">(optional)</span>
                 <input className="mt-2 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3.5 py-3 text-zinc-100 outline-none focus:border-zinc-600" onChange={(event) => setWebsiteUrl(event.target.value)} placeholder="https://your-app.vercel.app" type="url" value={websiteUrl} />
               </label>
-              {websiteUrl.trim() && <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3"><img alt="" className="size-8 rounded-md object-contain" src={websiteUrl.trim() === project.websiteUrl && project.logoUrl && !project.logoUrl.includes("google.com/s2/favicons") ? project.logoUrl : websiteUrl.trim().split("/").slice(0, 3).join("/") + "/favicon.ico"} onError={(event) => { event.currentTarget.style.display = "none"; }} /><span className="text-sm text-zinc-400">Website icon preview · the page icon is fetched when you save</span></div>}
+              {websiteUrl.trim() && <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3"><img alt="" className="size-8 rounded-md object-contain" src={"/api/favicon?url=" + encodeURIComponent(websiteUrl.trim())} onError={(event) => { event.currentTarget.style.display = "none"; }} /><span className="text-sm text-zinc-400">Website icon preview · the page icon is fetched when you save</span></div>}
               {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
               <button className="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-300 disabled:opacity-60" disabled={projectSavePending} type="submit">{projectSavePending ? "Saving…" : "Save details"}</button>
             </form>
           )}
 
           <section className="mt-12">
-            <div className="flex items-baseline justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">Configuration</p>
                 <h2 className="mt-2 text-xl font-semibold tracking-tight">Environment variables</h2>
+                <p className="mt-1 text-sm text-zinc-500">{variables.length} total</p>
               </div>
-              <span className="text-sm text-zinc-500">{variables.length} total</span>
+              <div className="inline-flex shrink-0 rounded-xl border border-zinc-800 bg-zinc-950 p-1" role="group" aria-label="Variable entry mode">
+                <button className={entryMode === "single" ? "rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 shadow-sm" : "rounded-lg px-4 py-2 text-sm text-zinc-500 transition hover:text-zinc-200"} onClick={() => setEntryMode("single")} type="button" aria-pressed={entryMode === "single"}>Single variable</button>
+                <button className={entryMode === "bulk" ? "rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 shadow-sm" : "rounded-lg px-4 py-2 text-sm text-zinc-500 transition hover:text-zinc-200"} onClick={() => setEntryMode("bulk")} type="button" aria-pressed={entryMode === "bulk"}>Bulk upload</button>
+              </div>
             </div>
 
             {error && <p role="alert" className="mt-4 text-sm text-red-400">{error}</p>}
-
-            <div className="mt-5 inline-flex rounded-xl border border-zinc-800 bg-zinc-950 p-1" role="group" aria-label="Variable entry mode">
-              <button className={entryMode === "single" ? "rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 shadow-sm" : "rounded-lg px-4 py-2 text-sm text-zinc-500 transition hover:text-zinc-200"} onClick={() => setEntryMode("single")} type="button" aria-pressed={entryMode === "single"}>Single variable</button>
-              <button className={entryMode === "bulk" ? "rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 shadow-sm" : "rounded-lg px-4 py-2 text-sm text-zinc-500 transition hover:text-zinc-200"} onClick={() => setEntryMode("bulk")} type="button" aria-pressed={entryMode === "bulk"}>Bulk upload</button>
-            </div>
 
             {entryMode === "bulk" && (
             <section className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5">
