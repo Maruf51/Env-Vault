@@ -1,4 +1,4 @@
-import { discoverFavicon } from "@/lib/favicon";
+import { discoverFavicon, isPublicHostname } from "@/lib/favicon";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ async function fetchImage(url: URL): Promise<Response | null> {
   try {
     const response = await fetch(url, {
       // Follow redirects for common CDN and Google favicon responses.
-      redirect: "follow",
+      redirect: "manual",
       signal: AbortSignal.timeout(7000),
       headers: {
         "user-agent": "Mozilla/5.0 (compatible; EnvVault-Favicon/1.0)",
@@ -51,9 +51,11 @@ export async function GET(request: Request) {
   const pageUrl = validWebUrl(website);
   if (!pageUrl) return new Response(null, { status: 400 });
 
+  if (!(await isPublicHostname(pageUrl.hostname))) return new Response(null, { status: 404 });
+
   // First try the website's own declared favicon.
   const discovered = validWebUrl(await discoverFavicon(pageUrl.toString()));
-  if (discovered) {
+  if (discovered && await isPublicHostname(discovered.hostname)) {
     const image = await fetchImage(discovered);
     if (image) return image;
   }
