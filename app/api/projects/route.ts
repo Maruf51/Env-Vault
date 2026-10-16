@@ -40,6 +40,20 @@ export async function POST(request: Request) {
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const description =
     typeof body?.description === "string" ? body.description.trim() : "";
+  const websiteUrl = typeof body?.websiteUrl === "string" ? body.websiteUrl.trim() : "";
+  let normalizedWebsiteUrl = "";
+  if (websiteUrl) {
+    try {
+      const parsed = new URL(websiteUrl);
+      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Invalid protocol");
+      normalizedWebsiteUrl = parsed.toString();
+    } catch {
+      return Response.json({ error: "Enter a valid website URL starting with http:// or https://." }, { status: 400 });
+    }
+  }
+  const logoUrl = normalizedWebsiteUrl
+    ? "https://www.google.com/s2/favicons?domain_url=" + encodeURIComponent(normalizedWebsiteUrl) + "&sz=128"
+    : "";
 
   if (!name || name.length > 100) {
     return Response.json({ error: "Project name is required (up to 100 characters)." }, { status: 400 });
@@ -54,6 +68,8 @@ export async function POST(request: Request) {
     userId,
     name,
     description,
+    websiteUrl: normalizedWebsiteUrl,
+    logoUrl,
     createdAt: now,
     updatedAt: now,
   });
@@ -63,6 +79,8 @@ export async function POST(request: Request) {
       id: result.insertedId.toHexString(),
       name,
       description,
+      websiteUrl: normalizedWebsiteUrl,
+      logoUrl,
       createdAt: now,
       updatedAt: now,
       variableCount: 0,
