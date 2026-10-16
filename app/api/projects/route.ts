@@ -21,10 +21,12 @@ export async function GET() {
   );
 
   return Response.json(
-    projects.map(({ _id, name, description, createdAt, updatedAt }) => ({
+    projects.map(({ _id, name, description, websiteUrl, logoUrl, createdAt, updatedAt }) => ({
       id: _id.toHexString(),
       name,
       description,
+      websiteUrl: websiteUrl ?? "",
+      logoUrl: logoUrl ?? "",
       createdAt,
       updatedAt,
       variableCount: variableCounts.get(_id.toHexString()) ?? 0,
