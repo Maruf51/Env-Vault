@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { signOut } from "next-auth/react";
 import { BrandLink } from "@/components/BrandLink";
+import { ExternalFavicon } from "@/components/ExternalFavicon";
 
 type Project = { id: string; name: string; description: string; websiteUrl?: string; logoUrl?: string };
 type Variable = { id: string; key: string; value: string };
@@ -261,7 +262,7 @@ export function ProjectDetails({
             <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
-                  {project.websiteUrl ? <img alt="" className="size-8 object-contain" onError={(event) => { event.currentTarget.style.display = "none"; }} src={"/api/favicon?url=" + encodeURIComponent(project.websiteUrl)} /> : <span className="text-lg font-semibold text-zinc-400">{project.name.slice(0, 1).toUpperCase()}</span>}
+                  <ExternalFavicon websiteUrl={project.websiteUrl} fallback={project.name} className="size-8 object-contain" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-3">
@@ -308,7 +309,7 @@ export function ProjectDetails({
               <label className="block text-sm text-zinc-300">Website URL <span className="text-zinc-500">(optional)</span>
                 <input className="mt-2 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3.5 py-3 text-zinc-100 outline-none focus:border-zinc-600" onChange={(event) => setWebsiteUrl(event.target.value)} placeholder="https://your-app.vercel.app" type="url" value={websiteUrl} />
               </label>
-              {websiteUrl.trim() && <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3"><img alt="" className="size-8 rounded-md object-contain" src={"/api/favicon?url=" + encodeURIComponent(websiteUrl.trim())} onError={(event) => { event.currentTarget.style.display = "none"; }} /><span className="text-sm text-zinc-400">Website icon preview · the page icon is fetched when you save</span></div>}
+              {websiteUrl.trim() && <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3"><ExternalFavicon websiteUrl={websiteUrl.trim()} fallback={projectName} className="size-8 rounded-md object-contain" /><span className="text-sm text-zinc-400">Website icon preview · the page icon is fetched when you save</span></div>}
               {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
               <button className="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-300 disabled:opacity-60" disabled={projectSavePending} type="submit">{projectSavePending ? "Saving…" : "Save details"}</button>
             </form>
