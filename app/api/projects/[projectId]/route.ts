@@ -7,6 +7,7 @@ import {
   unauthorizedResponse,
 } from "@/lib/auth-helpers";
 import { getDatabase } from "@/lib/mongodb";
+import { discoverFavicon } from "@/lib/favicon";
 
 type RouteContext = { params: Promise<{ projectId: string }> };
 
@@ -73,7 +74,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         const parsed = new URL(websiteUrl);
         if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Invalid protocol");
         updates.websiteUrl = parsed.toString();
-        updates.logoUrl = "https://www.google.com/s2/favicons?domain_url=" + encodeURIComponent(parsed.toString()) + "&sz=128";
+        updates.logoUrl = await discoverFavicon(parsed.toString());
       } catch {
         return Response.json({ error: "Enter a valid website URL starting with http:// or https://." }, { status: 400 });
       }
