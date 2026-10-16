@@ -27,11 +27,19 @@ export async function POST(request: Request) {
     return Response.json({ error: "Name must be 100 characters or fewer." }, { status: 400 });
   }
 
-  const database = await getDatabase();
-  const users = database.collection("users");
-  await users.createIndex({ email: 1 }, { unique: true });
+  if (!process.env.MONGODB_URI) {
+    console.error("[auth/register] MONGODB_URI is missing in this deployment.");
+    return Response.json(
+      { error: "Registration is temporarily unavailable because the database is not configured." },
+      { status: 503 },
+    );
+  }
 
   try {
+    const database = await getDatabase();
+    const users = database.collection("users");
+    await users.createIndex({ email: 1 }, { unique: true });
+
     const passwordHash = await bcrypt.hash(password, 12);
     const result = await users.insertOne({
       email,
@@ -48,6 +56,15 @@ export async function POST(request: Request) {
     if (error instanceof MongoServerError && error.code === 11000) {
       return Response.json({ error: "An account with this email already exists." }, { status: 409 });
     }
-    throw error;
+
+    // Log only the error class, never the request body, credentials, or database URI.
+    console.error(
+      "[auth/register] Registration failed:",
+      error instanceof Error ? error.name : "UnknownError",
+    );
+    return Response.json(
+      { error: "Registration could not reach the database. Check the production MongoDB configuration and try again." },
+      { status: 503 },
+    );
   }
 }
