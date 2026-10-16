@@ -44,7 +44,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return Response.json({ error: "Provide a project name or description to update." }, { status: 400 });
   }
 
-  const updates: { name?: string; description?: string; updatedAt: Date } = {
+  const updates: { name?: string; description?: string; websiteUrl?: string; logoUrl?: string; updatedAt: Date } = {
     updatedAt: new Date(),
   };
   if ("name" in body) {
