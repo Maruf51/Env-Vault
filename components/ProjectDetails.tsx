@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { signOut } from "next-auth/react";
 import { BrandLink } from "@/components/BrandLink";
 
@@ -35,6 +35,83 @@ export function ProjectDetails({
   const [editValue, setEditValue] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [importText, setImportText] = useState("");
+  const [importPending, setImportPending] = useState(false);
+  const [importMessage, setImportMessage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function parseEnvText(text: string) {
+    const parsed: { key: string; value: string }[] = [];
+    const invalidLines: number[] = [];
+    const seen = new Set<string>();
+    text.split(/\r?\n/).forEach((rawLine, index) => {
+      const line = rawLine.trim();
+      if (!line || line.startsWith("#")) return;
+      const normalized = line.startsWith("export ") ? line.slice(7).trimStart() : line;
+      const separator = normalized.indexOf("=");
+      if (separator < 1) { invalidLines.push(index + 1); return; }
+      const key = normalized.slice(0, separator).trim();
+      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) { invalidLines.push(index + 1); return; }
+      let value = normalized.slice(separator + 1).trim();
+      if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+        value = value.slice(1, -1);
+      }
+      if (seen.has(key)) { invalidLines.push(index + 1); return; }
+      seen.add(key);
+      parsed.push({ key, value });
+    });
+    return { parsed, invalidLines };
+  }
+
+  async function readEnvFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    setImportMessage("");
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      setImportMessage("Please choose a file smaller than 1 MB.");
+      event.target.value = "";
+      return;
+    }
+    setImportText(await file.text());
+    event.target.value = "";
+  }
+
+  async function importVariables() {
+    const { parsed, invalidLines } = parseEnvText(importText);
+    if (!parsed.length) {
+      setImportMessage(invalidLines.length ? "No valid variables found. Check lines: " + invalidLines.join(", ") + "." : "Paste or choose an .env file first.");
+      return;
+    }
+    if (parsed.length > 500) {
+      setImportMessage("Please import no more than 500 variables at a time.");
+      return;
+    }
+    setImportPending(true);
+    setImportMessage("");
+    setError("");
+    try {
+      const response = await fetch("/api/projects/" + projectId + "/variables/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variables: parsed }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setImportMessage(typeof result?.error === "string" ? result.error : "Unable to import variables.");
+        return;
+      }
+      const refreshed = await fetch("/api/projects/" + projectId + "/variables", { cache: "no-store" });
+      if (refreshed.ok) setVariables(await refreshed.json());
+      const skippedDetails = result.skippedKeys?.length ? " Skipped keys: " + result.skippedKeys.join(", ") + "." : "";
+      const invalidDetails = invalidLines.length ? " Ignored malformed or duplicate lines: " + invalidLines.join(", ") + "." : "";
+      setImportMessage("Imported " + result.imported + " variable(s); skipped " + result.skipped + "." + skippedDetails + invalidDetails);
+      setImportText("");
+    } catch {
+      setImportMessage("Unable to import variables. Please try again.");
+    } finally {
+      setImportPending(false);
+    }
+  }
 
   async function addVariable(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -184,6 +261,23 @@ export function ProjectDetails({
             </div>
 
             {error && <p role="alert" className="mt-4 text-sm text-red-400">{error}</p>}
+
+            <section className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-100">Import a complete .env file</h3>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">Choose a .env/.env.local file or paste its contents. Existing keys are kept; duplicates are skipped.</p>
+                </div>
+                <button className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800" onClick={() => fileInputRef.current?.click()} type="button">Choose file</button>
+                <input ref={fileInputRef} accept=".env,.txt,.local,text/plain" className="hidden" onChange={(event) => void readEnvFile(event)} type="file" />
+              </div>
+              <textarea aria-label="Environment file contents" className="mt-4 min-h-36 w-full resize-y rounded-lg border border-zinc-800 bg-zinc-950 px-3.5 py-3 font-mono text-xs leading-5 text-zinc-200 outline-none placeholder:text-zinc-600 focus:border-zinc-600" onChange={(event) => { setImportText(event.target.value); setImportMessage(""); }} placeholder={"DATABASE_URL=mongodb://...\nAPI_KEY=your-secret\n# comments and blank lines are ignored"} value={importText} />
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-zinc-500">{parseEnvText(importText).parsed.length} valid variable(s) detected · max 500 per import</p>
+                <button className="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-300 disabled:cursor-wait disabled:opacity-60" disabled={importPending || !importText.trim()} onClick={() => void importVariables()} type="button">{importPending ? "Importing…" : "Import variables"}</button>
+              </div>
+              {importMessage && <p aria-live="polite" className="mt-3 break-words text-sm text-zinc-300">{importMessage}</p>}
+            </section>
 
             <form onSubmit={addVariable} className="mt-5 grid gap-4 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5 md:grid-cols-[minmax(9rem,0.7fr)_minmax(12rem,1.3fr)_auto]">
               <label className="text-xs text-zinc-400">
