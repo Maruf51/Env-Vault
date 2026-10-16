@@ -5,6 +5,7 @@ import {
   unauthorizedResponse,
 } from "@/lib/auth-helpers";
 import { getDatabase } from "@/lib/mongodb";
+import { discoverFavicon } from "@/lib/favicon";
 
 export async function GET() {
   const userId = await getCurrentUser();
@@ -53,9 +54,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Enter a valid website URL starting with http:// or https://." }, { status: 400 });
     }
   }
-  const logoUrl = normalizedWebsiteUrl
-    ? "https://www.google.com/s2/favicons?domain_url=" + encodeURIComponent(normalizedWebsiteUrl) + "&sz=128"
-    : "";
+  const logoUrl = normalizedWebsiteUrl ? await discoverFavicon(normalizedWebsiteUrl) : "";
 
   if (!name || name.length > 100) {
     return Response.json({ error: "Project name is required (up to 100 characters)." }, { status: 400 });
