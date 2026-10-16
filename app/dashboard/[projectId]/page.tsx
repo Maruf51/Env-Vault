@@ -56,6 +56,8 @@ async function ProjectContent({ projectId }: { projectId: string }) {
         id: project._id.toHexString(),
         name: project.name,
         description: project.description,
+        websiteUrl: project.websiteUrl ?? "",
+        logoUrl: project.logoUrl ?? "",
       }}
       initialVariables={variables.map(({ _id, key, ...encrypted }) => ({
         id: _id.toHexString(),
