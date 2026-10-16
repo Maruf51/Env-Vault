@@ -149,7 +149,7 @@ export function ProjectDashboard({ initialProjects }: { initialProjects: Project
                 >
                   <div className="flex items-start justify-between gap-4">
                     <span className="flex size-10 items-center justify-center overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 font-mono text-sm text-zinc-300" aria-hidden="true">
-                      {project.logoUrl && !project.logoUrl.includes("google.com/s2/favicons") ? <img alt="" className="size-7 object-contain" src={project.logoUrl} onError={(event) => { event.currentTarget.style.display = "none"; }} /> : project.websiteUrl ? <img alt="" className="size-7 object-contain" src={project.websiteUrl.split("/").slice(0, 3).join("/") + "/favicon.ico"} onError={(event) => { event.currentTarget.style.display = "none"; }} /> : project.name.slice(0, 1).toUpperCase()}
+                      {project.websiteUrl ? <img alt="" className="size-7 object-contain" src={"/api/favicon?url=" + encodeURIComponent(project.websiteUrl)} onError={(event) => { event.currentTarget.style.display = "none"; }} /> : project.name.slice(0, 1).toUpperCase()}
                     </span>
                     <span className="text-zinc-600 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-zinc-300" aria-hidden="true">↗</span>
                   </div>
