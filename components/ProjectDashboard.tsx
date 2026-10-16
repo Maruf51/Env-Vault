@@ -9,6 +9,8 @@ type Project = {
   id: string;
   name: string;
   description: string;
+  websiteUrl?: string;
+  logoUrl?: string;
   updatedAt: string;
   variableCount: number;
 };
@@ -17,6 +19,7 @@ export function ProjectDashboard({ initialProjects }: { initialProjects: Project
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +32,7 @@ export function ProjectDashboard({ initialProjects }: { initialProjects: Project
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({ name, description, websiteUrl }),
       });
       const result = (await response.json()) as Project | { error?: string };
       if (!response.ok) {
@@ -39,6 +42,7 @@ export function ProjectDashboard({ initialProjects }: { initialProjects: Project
       setProjects((current) => [result as Project, ...current]);
       setName("");
       setDescription("");
+      setWebsiteUrl("");
       setShowForm(false);
     } catch {
       setError("Unable to create project. Please try again.");
@@ -106,6 +110,17 @@ export function ProjectDashboard({ initialProjects }: { initialProjects: Project
                 value={description}
               />
             </label>
+            <label className="block text-sm text-zinc-300">
+              Website URL <span className="text-zinc-500">(optional)</span>
+              <input
+                className="mt-2 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3.5 py-3 text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-zinc-600"
+                onChange={(event) => setWebsiteUrl(event.target.value)}
+                placeholder="https://your-app.vercel.app"
+                type="url"
+                value={websiteUrl}
+              />
+              <span className="mt-1 block text-xs text-zinc-500">We'll use the website favicon as the project logo.</span>
+            </label>
             {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
             <button
               className="rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-300 disabled:cursor-wait disabled:opacity-60"
@@ -133,8 +148,8 @@ export function ProjectDashboard({ initialProjects }: { initialProjects: Project
                   href={`/dashboard/${project.id}`}
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <span className="flex size-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950 font-mono text-sm text-zinc-300" aria-hidden="true">
-                      {project.name.slice(0, 1).toUpperCase()}
+                    <span className="flex size-10 items-center justify-center overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 font-mono text-sm text-zinc-300" aria-hidden="true">
+                      {project.logoUrl ? <img alt="" className="size-7 object-contain" src={project.logoUrl} onError={(event) => { event.currentTarget.style.display = "none"; }} /> : project.name.slice(0, 1).toUpperCase()}
                     </span>
                     <span className="text-zinc-600 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-zinc-300" aria-hidden="true">↗</span>
                   </div>
@@ -142,6 +157,7 @@ export function ProjectDashboard({ initialProjects }: { initialProjects: Project
                   <p className="mt-1 min-h-5 truncate text-sm text-zinc-500">
                     {project.description || "No description"}
                   </p>
+                  {project.websiteUrl && <span className="mt-2 block truncate text-xs text-zinc-500">{project.websiteUrl}</span>}
                   <div className="mt-6 flex items-center justify-between border-t border-zinc-800/80 pt-4">
                     <span className="inline-flex items-center gap-2 text-xs text-zinc-400">
                       <span className="size-1.5 rounded-full bg-zinc-500" />
